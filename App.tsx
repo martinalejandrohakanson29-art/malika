@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import { HashRouter, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import { SiteSettings, Appointment, AppContextType } from './types';
@@ -16,7 +15,6 @@ export const useApp = () => {
   return context;
 };
 
-// Fix: Use explicit props with optional children to avoid strict typing issues in some environments
 const AppProvider = ({ children }: { children?: React.ReactNode }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(() => localStorage.getItem('isLoggedIn') === 'true');
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
@@ -95,24 +93,39 @@ const AppProvider = ({ children }: { children?: React.ReactNode }) => {
 };
 
 const Navbar = () => {
-  const { toggleDarkMode, darkMode, settings, isLoggedIn } = useApp();
+  const { toggleDarkMode, darkMode, isLoggedIn } = useApp();
   const location = useLocation();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const isAdminPath = location.pathname === '/admin';
 
   if (isAdminPath) return null;
+
+  const navLinks = [
+    { name: 'Inicio', path: '/' },
+    { name: 'Tienda', path: '/shop' },
+    { name: 'Servicios', path: '/services' },
+  ];
 
   return (
     <nav className="fixed w-full z-50 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
-          <Link to="/" className="flex items-center">
+          <Link to="/" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center">
             <span className="font-display font-bold text-2xl md:text-3xl tracking-wide text-gray-900 dark:text-white">Malika</span>
             <span className="ml-2 text-[10px] md:text-xs uppercase tracking-widest text-primary font-semibold mt-2">Nails & Beauty</span>
           </Link>
+          
+          {/* Desktop Links */}
           <div className="hidden md:flex items-center space-x-6">
-            <Link to="/" className="text-gray-900 dark:text-gray-100 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors">Inicio</Link>
-            <Link to="/shop" className="text-gray-500 dark:text-gray-400 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors">Tienda</Link>
-            <Link to="/services" className="text-gray-500 dark:text-gray-400 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors">Servicios</Link>
+            {navLinks.map((link) => (
+              <Link 
+                key={link.path} 
+                to={link.path} 
+                className={`${location.pathname === link.path ? 'text-primary' : 'text-gray-900 dark:text-gray-100'} hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors`}
+              >
+                {link.name}
+              </Link>
+            ))}
             {isLoggedIn ? (
               <Link to="/admin" className="text-admin font-bold px-3 py-2 rounded-md text-sm">Admin</Link>
             ) : (
@@ -125,14 +138,65 @@ const Navbar = () => {
               </span>
             </button>
           </div>
+
+          {/* Mobile Toggle Button */}
           <div className="md:hidden flex items-center space-x-2">
-            <button onClick={toggleDarkMode} className="p-2">
+            <button onClick={toggleDarkMode} className="p-2 text-gray-600 dark:text-gray-300">
               <span className="material-icons-outlined">{darkMode ? 'light_mode' : 'dark_mode'}</span>
             </button>
-            <span className="material-icons text-gray-600 dark:text-gray-300">menu</span>
+            <button 
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
+              className="p-2 text-gray-600 dark:text-gray-300 focus:outline-none"
+            >
+              <span className="material-icons">{isMobileMenuOpen ? 'close' : 'menu'}</span>
+            </button>
           </div>
         </div>
       </div>
+
+      {/* Mobile Menu Content */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-gray-800">
+          <div className="px-4 pt-2 pb-6 space-y-1">
+            {navLinks.map((link) => (
+              <Link
+                key={link.path}
+                to={link.path}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="block px-3 py-4 text-base font-medium text-gray-900 dark:text-gray-100 border-b border-gray-50 dark:border-zinc-800/50"
+              >
+                {link.name}
+              </Link>
+            ))}
+            {isLoggedIn ? (
+              <Link 
+                to="/admin" 
+                onClick={() => setIsMobileMenuOpen(false)} 
+                className="block px-3 py-4 text-base font-bold text-admin border-b border-gray-50 dark:border-zinc-800/50"
+              >
+                Panel Admin
+              </Link>
+            ) : (
+              <Link 
+                to="/login" 
+                onClick={() => setIsMobileMenuOpen(false)} 
+                className="block px-3 py-4 text-base font-medium text-gray-500 border-b border-gray-50 dark:border-zinc-800/50"
+              >
+                Ingresar
+              </Link>
+            )}
+            <div className="pt-4 px-3">
+              <Link 
+                to="/services" 
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="block w-full text-center bg-primary text-white py-4 rounded-xl text-lg font-bold shadow-lg"
+              >
+                Reservar Ahora
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
     </nav>
   );
 };
@@ -155,14 +219,12 @@ const Footer = () => {
   );
 };
 
-// Fix: Explicitly type children as optional to resolve "missing children" errors during JSX parsing/compilation (line 176)
 const ProtectedRoute = ({ children }: { children?: React.ReactNode }) => {
   const { isLoggedIn } = useApp();
   if (!isLoggedIn) return <Navigate to="/login" replace />;
   return <>{children}</>;
 };
 
-// Fix: Remove React.FC to avoid potential children-related type conflicts in React 18
 const App = () => {
   return (
     <AppProvider>
