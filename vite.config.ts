@@ -4,9 +4,17 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
+    
+    // Esto detecta el puerto que Railway te asigne, o usa 3000 por defecto
+    const port = Number(process.env.PORT) || 3000;
+
     return {
       server: {
-        port: 3000,
+        port: port,
+        host: '0.0.0.0', // Esto es vital para que Railway pueda acceder
+      },
+      preview: {
+        port: port,
         host: '0.0.0.0',
       },
       plugins: [react()],
